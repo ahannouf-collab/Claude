@@ -1,5 +1,8 @@
 import cors from "cors";
 import express from "express";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { seedIfEmpty } from "./seed.js";
 import { m1Router } from "./routes/m1.js";
 import { m2Router } from "./routes/m2.js";
@@ -30,6 +33,17 @@ app.use("/api/m6", m6Router);
 app.use("/api/m7", m7Router);
 app.use("/api/m8", m8Router);
 app.use("/api/m9", m9Router);
+
+// En production, l'image Docker embarque le build client (client/dist) à côté
+// du serveur compilé : on le sert en statique avec un fallback SPA.
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const clientDist = path.join(__dirname, "..", "..", "client", "dist");
+if (fs.existsSync(clientDist)) {
+  app.use(express.static(clientDist));
+  app.get(/^(?!\/api).*/, (_req, res) => {
+    res.sendFile(path.join(clientDist, "index.html"));
+  });
+}
 
 const PORT = process.env.PORT ? Number(process.env.PORT) : 4000;
 app.listen(PORT, () => {

@@ -50,6 +50,42 @@ npm run dev
 
 Puis ouvrir http://localhost:5173.
 
+## Déploiement (Docker)
+
+L'application est packagée en une seule image Docker autonome : le serveur
+Express sert à la fois l'API (`/api/*`) et les fichiers statiques du build
+React (fallback SPA sur toutes les autres routes). La base SQLite est écrite
+dans `/app/data/data.sqlite` (volume Docker), donc les données survivent aux
+redémarrages/mises à jour du conteneur.
+
+```bash
+# Build + run avec docker-compose (recommandé)
+docker compose up --build -d
+
+# Ou manuellement :
+docker build -t sfd-fcubs-app .
+docker run -d -p 4000:4000 -v sfd-data:/app/data --name sfd-fcubs sfd-fcubs-app
+```
+
+Puis ouvrir http://localhost:4000 (l'API et le front sont servis sur le même
+port en production, contrairement au mode dev qui utilise deux ports).
+
+Variables d'environnement :
+
+| Variable | Défaut | Rôle |
+|---|---|---|
+| `PORT` | `4000` | Port d'écoute HTTP |
+| `DB_PATH` | `/app/data/data.sqlite` | Chemin du fichier SQLite |
+
+Pour déployer sur une plateforme PaaS (Render, Railway, Fly.io, etc.), pointer
+simplement la plateforme sur ce `Dockerfile` à la racine du repo — c'est un
+build Docker standard sans dépendance particulière à l'infrastructure locale.
+
+> Note : la construction de l'image nécessite de pouvoir tirer l'image de
+> base `node:20-bookworm-slim` depuis Docker Hub. Si votre réseau restreint
+> les registres de conteneurs (proxy d'entreprise, environnement bac à sable),
+> lancez le build depuis un poste/CI qui a accès à Docker Hub.
+
 ## Modèle de persistance
 
 Chaque table de paramétrage (`ref_event_code`, `ref_event_reason`,

@@ -1,0 +1,8 @@
+**/node_modules
+**/dist
+**/*.tsbuildinfo
+**/*.log
+server/data.sqlite
+server/data.sqlite-shm
+server/data.sqlite-wal
+.git

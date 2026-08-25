@@ -1,0 +1,15 @@
+services:
+  app:
+    build: .
+    image: sfd-fcubs-app:latest
+    ports:
+      - "4000:4000"
+    environment:
+      - PORT=4000
+      - DB_PATH=/app/data/data.sqlite
+    volumes:
+      - sfd-data:/app/data
+    restart: unless-stopped
+
+volumes:
+  sfd-data:
