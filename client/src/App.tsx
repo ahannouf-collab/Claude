@@ -1,44 +1,50 @@
 import { useMemo, useState } from "react";
 import { ROLE_LABELS, USERS, canOpenScreen, type UserProfile } from "./roles";
-import { M1CodeEvent } from "./screens/M1CodeEvent";
-import { M2ActiveEvents } from "./screens/M2ActiveEvents";
-import { M3EventHistory } from "./screens/M3EventHistory";
-import { M4EventReason } from "./screens/M4EventReason";
-import { M5SopMatrix } from "./screens/M5SopMatrix";
-import { M6RejectionMonitor } from "./screens/M6RejectionMonitor";
-import { M7GlobalRestriction } from "./screens/M7GlobalRestriction";
-import { M8MclContribution } from "./screens/M8MclContribution";
-import { M9CommutationMonitor } from "./screens/M9CommutationMonitor";
+import { M01Parameter } from "./screens/M01Parameter";
+import { M02Eligibility } from "./screens/M02Eligibility";
+import { M03DecisionN1 } from "./screens/M03DecisionN1";
+import { M04DecisionN2 } from "./screens/M04DecisionN2";
+import { M05Reactivate } from "./screens/M05Reactivate";
+import { M06ReactivateAuth } from "./screens/M06ReactivateAuth";
+import { M07CifInquiry } from "./screens/M07CifInquiry";
+import { M08Reconciliation } from "./screens/M08Reconciliation";
+import { M09EodDashboard } from "./screens/M09EodDashboard";
 
 interface FunctionDef {
   id: string;
   functionId: string;
   label: string;
-  group: "Paramétrage" | "Consultation" | "Exploitation";
+  group: "Paramétrage" | "Décisions" | "Réactivation" | "Consultation" | "Pilotage";
 }
 
 const FUNCTIONS: FunctionDef[] = [
-  { id: "M1", functionId: "MCDCEVNT", label: "Code Event Maintenance", group: "Paramétrage" },
-  { id: "M4", functionId: "MCDCEVRS", label: "Event Reason Maintenance", group: "Paramétrage" },
-  { id: "M5", functionId: "MCDESOP", label: "Event / SOP Impact Matrix", group: "Paramétrage" },
-  { id: "M8", functionId: "MCDMCLMX", label: "MCL Restriction Contribution", group: "Paramétrage" },
-  { id: "M2", functionId: "MCSAEVTS", label: "Active Account Events", group: "Consultation" },
-  { id: "M3", functionId: "MCDAEVTH", label: "Account Event History", group: "Consultation" },
-  { id: "M7", functionId: "MCSAEVST", label: "Account Events & Global Restriction", group: "Consultation" },
-  { id: "M6", functionId: "MCSEVREJ", label: "Event Interface Rejection Monitor", group: "Exploitation" },
-  { id: "M9", functionId: "MCSMCLMN", label: "MCL Commutation Monitor", group: "Exploitation" },
+  { id: "M01", functionId: "BOA.DESH.PARAM", label: "Paramétrage seuils, délais et workflow", group: "Paramétrage" },
+  { id: "M02", functionId: "BOA.DESH.ELIG", label: "Catégories, transactions BANK et comptes indisponibles", group: "Paramétrage" },
+  { id: "M03", functionId: "BOA.DESH.N1.WORKLIST", label: "Décision agence N1", group: "Décisions" },
+  { id: "M04", functionId: "BOA.DESH.N2.WORKLIST", label: "Décision back-office N2", group: "Décisions" },
+  { id: "M05", functionId: "BOA.DESH.REACTIVATE", label: "Saisie réactivation manuelle", group: "Réactivation" },
+  { id: "M06", functionId: "BOA.DESH.REACT.AUTH", label: "Autorisation réactivation", group: "Réactivation" },
+  { id: "M07", functionId: "BOA.DESH.CIF.INQUIRY", label: "Consultation Tiers et comptes", group: "Consultation" },
+  { id: "M08", functionId: "BOA.DESH.RECON.EXC", label: "Anomalies et réconciliation", group: "Pilotage" },
+  { id: "M09", functionId: "BOA.DESH.EOD.DASHBOARD", label: "Pilotage batch et KPI", group: "Pilotage" },
 ];
 
-const GROUPS: FunctionDef["group"][] = ["Paramétrage", "Consultation", "Exploitation"];
+const GROUPS: FunctionDef["group"][] = ["Paramétrage", "Décisions", "Réactivation", "Consultation", "Pilotage"];
 
 export default function App() {
   const [userLogin, setUserLogin] = useState(USERS[0].login);
   const user: UserProfile = USERS.find((u) => u.login === userLogin) ?? USERS[0];
   const allowed = useMemo(() => FUNCTIONS.filter((f) => canOpenScreen(user.role, f.id)), [user.role]);
-  const [active, setActive] = useState<string>(allowed[0]?.id ?? "M2");
+  const [active, setActive] = useState<string>(allowed[0]?.id ?? "M01");
 
   const currentFn = FUNCTIONS.find((f) => f.id === active) ?? allowed[0];
   const isAllowed = allowed.some((f) => f.id === active);
+
+  function handleSelectUser(login: string) {
+    setUserLogin(login);
+    const nextAllowed = FUNCTIONS.filter((f) => canOpenScreen(USERS.find((u) => u.login === login)!.role, f.id));
+    if (!nextAllowed.some((f) => f.id === active)) setActive(nextAllowed[0]?.id ?? "M01");
+  }
 
   function renderScreen() {
     if (!currentFn || !isAllowed) {
@@ -46,7 +52,7 @@ export default function App() {
         <div className="eb-window">
           <div className="eb-content">
             <div className="callout error">
-              Aucune fonction habilitée pour ce profil, ou accès refusé (RG UAT-10 : action désactivée / tentative
+              Aucune fonction habilitée pour ce profil, ou accès refusé (RG-01 : accès contrôlé par rôle — tentative
               tracée).
             </div>
           </div>
@@ -54,24 +60,24 @@ export default function App() {
       );
     }
     switch (currentFn.id) {
-      case "M1":
-        return <M1CodeEvent user={user} />;
-      case "M2":
-        return <M2ActiveEvents user={user} />;
-      case "M3":
-        return <M3EventHistory user={user} />;
-      case "M4":
-        return <M4EventReason user={user} />;
-      case "M5":
-        return <M5SopMatrix user={user} />;
-      case "M6":
-        return <M6RejectionMonitor user={user} />;
-      case "M7":
-        return <M7GlobalRestriction user={user} />;
-      case "M8":
-        return <M8MclContribution user={user} />;
-      case "M9":
-        return <M9CommutationMonitor user={user} />;
+      case "M01":
+        return <M01Parameter user={user} />;
+      case "M02":
+        return <M02Eligibility user={user} />;
+      case "M03":
+        return <M03DecisionN1 user={user} />;
+      case "M04":
+        return <M04DecisionN2 user={user} />;
+      case "M05":
+        return <M05Reactivate user={user} />;
+      case "M06":
+        return <M06ReactivateAuth user={user} />;
+      case "M07":
+        return <M07CifInquiry user={user} />;
+      case "M08":
+        return <M08Reconciliation user={user} />;
+      case "M09":
+        return <M09EodDashboard user={user} />;
       default:
         return null;
     }
@@ -81,11 +87,11 @@ export default function App() {
     <div className="app-shell">
       <div className="top-header">
         <div className="brand">
-          <span className="oracle">ORACLE</span>SFD - Référentiel des Événements Compte - FCUBS
+          <span className="oracle">ORACLE</span>SFD Mockups Déshérence — FCUBS
         </div>
         <div className="session-info">
           <span>Bank of Africa / TPOSIG</span>
-          <select value={userLogin} onChange={(e) => setUserLogin(e.target.value)}>
+          <select value={userLogin} onChange={(e) => handleSelectUser(e.target.value)}>
             {USERS.map((u) => (
               <option key={u.login} value={u.login}>
                 {u.login} - {u.name}

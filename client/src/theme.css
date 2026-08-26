@@ -263,3 +263,34 @@ table.eb-grid tbody tr:hover { background: #e4edf5; cursor: pointer; }
 }
 
 .hint { color: var(--muted); font-size: 11.5px; margin-top: -8px; margin-bottom: 12px; }
+
+.kpi-grid { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 18px; }
+.kpi-tile {
+  flex: 1;
+  min-width: 150px;
+  background: linear-gradient(#fff, #f3f6f9);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--navy);
+  border-radius: 4px;
+  padding: 10px 14px;
+  cursor: pointer;
+  text-align: left;
+}
+.kpi-tile:hover { background: #e4edf5; }
+.kpi-tile.selected { border-left-color: var(--accent-orange); background: #fdf3e6; }
+.kpi-tile .kpi-value { font-size: 24px; font-weight: 700; color: var(--navy); }
+.kpi-tile .kpi-label { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+.badge { display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; color: #fff; }
+.badge-ELIGIBLE, .badge-APPROVE, .badge-RESOLVED, .badge-ACTIVE { background: var(--ok); }
+.badge-NOT_ELIGIBLE, .badge-REJECT, .badge-CLOSED { background: var(--error); }
+.badge-PENDING, .badge-HOLD, .badge-OPEN, .badge-DORMANT { background: var(--accent-orange); }
+.badge-IN_PROGRESS, .badge-DESHERENCE { background: #4d7ea8; }
+.badge-U { background: #8a8f98; }
+.badge-A { background: var(--ok); }
+
+.search-bar { display: flex; gap: 10px; align-items: flex-end; margin-bottom: 14px; flex-wrap: wrap; }
+.search-bar .field { flex: 0 1 200px; min-width: 160px; margin-bottom: 0; }
+.search-bar button { align-self: flex-end; }
+
+.detail-panel { border: 1px solid var(--border); border-radius: 4px; padding: 14px; margin-top: 12px; background: #fbfcfd; }

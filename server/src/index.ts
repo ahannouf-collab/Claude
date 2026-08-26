@@ -4,15 +4,15 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { seedIfEmpty } from "./seed.js";
-import { m1Router } from "./routes/m1.js";
-import { m2Router } from "./routes/m2.js";
-import { m3Router } from "./routes/m3.js";
-import { m4Router } from "./routes/m4.js";
-import { m5Router } from "./routes/m5.js";
-import { m6Router } from "./routes/m6.js";
-import { m7Router } from "./routes/m7.js";
-import { m8Router } from "./routes/m8.js";
-import { m9Router } from "./routes/m9.js";
+import { m01Router } from "./routes/m01.js";
+import { m02Router } from "./routes/m02.js";
+import { m03Router } from "./routes/m03.js";
+import { m04Router } from "./routes/m04.js";
+import { m05Router } from "./routes/m05.js";
+import { m06Router } from "./routes/m06.js";
+import { m07Router } from "./routes/m07.js";
+import { m08Router } from "./routes/m08.js";
+import { m09Router } from "./routes/m09.js";
 import { lovRouter } from "./routes/lov.js";
 
 seedIfEmpty();
@@ -24,15 +24,15 @@ app.use(express.json());
 app.get("/api/health", (_req, res) => res.json({ status: "ok", ts: new Date().toISOString() }));
 
 app.use("/api/lov", lovRouter);
-app.use("/api/m1", m1Router);
-app.use("/api/m2", m2Router);
-app.use("/api/m3", m3Router);
-app.use("/api/m4", m4Router);
-app.use("/api/m5", m5Router);
-app.use("/api/m6", m6Router);
-app.use("/api/m7", m7Router);
-app.use("/api/m8", m8Router);
-app.use("/api/m9", m9Router);
+app.use("/api/m01", m01Router);
+app.use("/api/m02", m02Router);
+app.use("/api/m03", m03Router);
+app.use("/api/m04", m04Router);
+app.use("/api/m05", m05Router);
+app.use("/api/m06", m06Router);
+app.use("/api/m07", m07Router);
+app.use("/api/m08", m08Router);
+app.use("/api/m09", m09Router);
 
 // En production, l'image Docker embarque le build client (client/dist) à côté
 // du serveur compilé : on le sert en statique avec un fallback SPA.
@@ -47,5 +47,5 @@ if (fs.existsSync(clientDist)) {
 
 const PORT = process.env.PORT ? Number(process.env.PORT) : 4000;
 app.listen(PORT, () => {
-  console.log(`SFD FCUBS API listening on http://localhost:${PORT}`);
+  console.log(`SFD Déshérence API listening on http://localhost:${PORT}`);
 });

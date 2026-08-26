@@ -1,38 +1,69 @@
-# SFD FCUBS — Référentiel des Événements Compte
+# SFD FCUBS — Gestion des comptes en déshérence
 
 Application web full-stack conforme aux 9 mockups Oracle FLEXCUBE Enterprise
-Browser (M1 à M9) de la SFD `BOA-TPOSIG-MCB-REFCOMPTE-SFD-MOCKUPS-FCUBS-V1.0`.
+Browser (M01 à M09) de la SFD `BOA-TPOSIG-MCB-DESH-IHM-FCUBS-V2.0`.
 
 ## Structure
 
 - `server/` — API Express + TypeScript, persistance SQLite (better-sqlite3).
-  Implémente le modèle de persistance transversal (objets versionnés,
-  append-only, workflow Maker/Checker) et les règles de gestion RG-M1 à RG-M9.
+  Implémente le modèle de persistance transversal (paramétrage versionné,
+  dossier d'éligibilité, décisions N1/N2, réactivation, réconciliation,
+  audit append-only) et le workflow Maker-Checker décrit dans la SFD.
 - `client/` — Application React + TypeScript (Vite) reproduisant la charte
   Enterprise Browser (bandeau Oracle/FLEXCUBE, toolbar contextuelle, onglets
-  Main/Details/Audit, pied de page Record Status/Maker/Checker/Version).
+  Main/Audit, pied de page Record Status/Maker/Checker/Version).
 
 ## Écrans couverts
 
-| Écran | Function ID | Pattern | Titre |
-|---|---|---|---|
-| M1 | MCDCEVNT | Maintenance | Code Event Maintenance |
-| M2 | MCSAEVTS | Consultation | Active Account Events |
-| M3 | MCDAEVTH | Consultation | Account Event History |
-| M4 | MCDCEVRS | Maintenance | Event Reason Maintenance |
-| M5 | MCDESOP | Maintenance | Event / SOP Impact Matrix |
-| M6 | MCSEVREJ | Exploitation | Event Interface Rejection Monitor |
-| M7 | MCSAEVST | Consultation | Account Events & Global Restriction |
-| M8 | MCDMCLMX | Maintenance | MCL Restriction Contribution |
-| M9 | MCSMCLMN | Exploitation | MCL Commutation Monitor |
+| Écran | Function ID | Finalité |
+|---|---|---|
+| M01 | BOA.DESH.PARAM | Paramétrage seuils, délais et workflow |
+| M02 | BOA.DESH.ELIG | Catégories, transactions BANK et comptes indisponibles |
+| M03 | BOA.DESH.N1.WORKLIST | Décision agence N1 |
+| M04 | BOA.DESH.N2.WORKLIST | Décision back-office N2 |
+| M05 | BOA.DESH.REACTIVATE | Saisie réactivation manuelle |
+| M06 | BOA.DESH.REACT.AUTH | Autorisation réactivation |
+| M07 | BOA.DESH.CIF.INQUIRY | Consultation Tiers et comptes |
+| M08 | BOA.DESH.RECON.EXC | Anomalies et réconciliation |
+| M09 | BOA.DESH.EOD.DASHBOARD | Pilotage batch et KPI |
 
-## Sécurité / profils (démo)
+## Principes de conception appliqués
+
+- **Séparation des responsabilités** : paramétrage, décision, autorisation,
+  consultation et supervision sont portés par des rôles distincts.
+- **Maker-Checker** : chaque mutation sensible est persistée en statut `U`
+  (non autorisé) puis nécessite une autorisation par un Checker distinct du
+  Maker (`RG-04`) avant de passer en statut `A` (autorisé).
+- **Tout ou rien Tiers/CIF** : le moteur d'éligibilité (`server/src/engine.ts`)
+  évalue l'éligibilité sur le périmètre complet des comptes disponibles du
+  CIF, en excluant les comptes déclarés indisponibles (M02).
+- **Fraîcheur** : les décisions relisent le solde/statut CBS courant avant
+  persistance ; un contrôle de version optimiste bloque toute écriture sur un
+  enregistrement modifié depuis son chargement.
+- **Traçabilité** : `audit_log` est append-only (consultations sensibles,
+  décisions, autorisations, rejets, réactivations, exécutions batch).
+- **Conservation** : un paramétrage déjà autorisé n'est jamais écrasé — une
+  modification crée une nouvelle version, l'ancienne restant historisée.
+
+## Rôles de démonstration
 
 Un sélecteur de profil dans l'en-tête simule les rôles décrits dans la SFD :
-`FCUBS_PARAM_MAKER`, `FCUBS_PARAM_CHECKER`, `FCUBS_VIEWER`, `FCUBS_OPS_N2`,
-`FCUBS_OPS_SENIOR`, `FCUBS_AUDITOR`. Chaque profil n'affiche que les fonctions
-autorisées et active/désactive la toolbar contextuelle en conséquence
-(New/Query/Unlock/Save/Delete/Submit/Authorize/Copy/Print/Close).
+Maker/Checker Paramétrage (M01/M02), Agence Maker/Checker (M03), Back-office
+Maker/Checker (M04), Maker/Checker Réactivation (M05/M06), Support/Superviseur
+Réconciliation (M08/M09) et Auditeur (consultation transverse en lecture
+seule sur tous les écrans, y compris les journaux d'audit).
+
+## Moteur d'éligibilité et batch EOD
+
+`M09 - Pilotage batch et KPI` expose un bouton **Run EOD Batch** (réservé au
+rôle superviseur) qui exécute le moteur d'éligibilité pour la date métier
+sélectionnée : calcul de l'inactivité et du solde cumulé par Tiers/CIF,
+application du paramétrage M01 et des règles M02, création des dossiers
+d'éligibilité et alimentation de la worklist N1 (M03). Le traitement est
+idempotent (pas de doublon pour une même date métier) et chaque exécution est
+historisée dans `desh_batch_run`. La validation finale du décideur N2 (M04)
+déclenche le traitement cible (bascule du compte en `DESHERENCE`) ; une
+autorisation de réactivation (M06) recalcule le statut du compte (`ACTIVE`).
 
 ## Démarrage
 
@@ -63,8 +94,8 @@ redémarrages/mises à jour du conteneur.
 docker compose up --build -d
 
 # Ou manuellement :
-docker build -t sfd-fcubs-app .
-docker run -d -p 4000:4000 -v sfd-data:/app/data --name sfd-fcubs sfd-fcubs-app
+docker build -t sfd-desherence-app .
+docker run -d -p 4000:4000 -v sfd-data:/app/data --name sfd-desherence sfd-desherence-app
 ```
 
 Puis ouvrir http://localhost:4000 (l'API et le front sont servis sur le même
@@ -88,11 +119,13 @@ build Docker standard sans dépendance particulière à l'infrastructure locale.
 
 ## Modèle de persistance
 
-Chaque table de paramétrage (`ref_event_code`, `ref_event_reason`,
-`ref_sop_event_matrix`, `mcl_restriction_contrib`) est versionnée
-(`version`, `is_current`, `status` DRAFT/SUBMITTED/AUTHORIZED) : Unlock crée
-une nouvelle version brouillon à partir de la version autorisée courante,
-Authorize l'active et exige un Checker distinct du Maker (contrôle 4 yeux),
-Delete ne s'applique qu'aux brouillons jamais autorisés. Les tables
-`hist_evt_compte`, `event_rejection_log` et `commutation_history` sont
-append-only et alimentent respectivement M3, M6 et M9.
+Les tables de paramétrage/décision (`desh_parameter`, `desh_eligibility_rule`,
+`desh_unavailable_account`, `desh_decision_n1`, `desh_decision_n2`,
+`desh_reactivation`, `desh_exception`) sont versionnées (`version`,
+`is_current`, `status` U/A) : Save persiste en statut `U` (nouvelle version si
+l'enregistrement courant était déjà autorisé, sans écraser la version
+autorisée), Authorize l'active et exige un Checker distinct du Maker (contrôle
+4 yeux), Delete ne s'applique qu'aux enregistrements non autorisés. Les
+tables `desh_eligibility_dossier` et `desh_batch_run` sont alimentées par le
+moteur/batch EOD ; `audit_log` est append-only et alimente l'onglet Audit de
+chaque écran.
