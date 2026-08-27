@@ -12,159 +12,123 @@ db.pragma("journal_mode = WAL");
 db.pragma("foreign_keys = ON");
 
 db.exec(`
--- ===== Reference data (LOV sources) =====
-CREATE TABLE IF NOT EXISTS customer_account (
-  account_no TEXT PRIMARY KEY,
-  rib TEXT,
-  customer_id TEXT,
-  customer_name TEXT,
-  account_status TEXT
-);
-
--- ===== M1 - REF_EVENT_CODE (versioned, Maker/Checker) =====
-CREATE TABLE IF NOT EXISTS ref_event_code (
+-- ===== Utilisateurs du cabinet =====
+CREATE TABLE IF NOT EXISTS users (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  event_code TEXT NOT NULL,
-  version INTEGER NOT NULL,
-  is_current INTEGER NOT NULL DEFAULT 1,
-  status TEXT NOT NULL DEFAULT 'DRAFT', -- DRAFT | SUBMITTED | AUTHORIZED
-  description TEXT NOT NULL,
-  domain TEXT NOT NULL,
-  event_status TEXT NOT NULL DEFAULT 'Active', -- Active | Inactive
-  maker TEXT,
-  maker_ts TEXT,
-  checker TEXT,
-  checker_ts TEXT,
-  last_action TEXT NOT NULL DEFAULT 'New',
+  full_name TEXT NOT NULL,
+  email TEXT NOT NULL UNIQUE,
+  password_hash TEXT NOT NULL,
+  role TEXT NOT NULL DEFAULT 'secretaire', -- admin | medecin | secretaire
+  specialite TEXT,               -- pour un médecin (ex: Médecine générale, Pédiatrie...)
+  telephone TEXT,
+  actif INTEGER NOT NULL DEFAULT 1,
   created_ts TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
--- ===== M4 - REF_EVENT_REASON (versioned, Maker/Checker) =====
-CREATE TABLE IF NOT EXISTS ref_event_reason (
+-- ===== Patients =====
+CREATE TABLE IF NOT EXISTS patients (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  event_code TEXT NOT NULL,
-  reason_code TEXT NOT NULL,
-  version INTEGER NOT NULL,
-  is_current INTEGER NOT NULL DEFAULT 1,
-  status TEXT NOT NULL DEFAULT 'DRAFT',
-  description TEXT NOT NULL,
-  maker TEXT,
-  maker_ts TEXT,
-  checker TEXT,
-  checker_ts TEXT,
-  last_action TEXT NOT NULL DEFAULT 'New',
+  nom TEXT NOT NULL,
+  prenom TEXT NOT NULL,
+  cin TEXT,
+  date_naissance TEXT,
+  sexe TEXT NOT NULL DEFAULT 'M', -- M | F
+  telephone TEXT NOT NULL,
+  email TEXT,
+  adresse TEXT,
+  ville TEXT,
+  mutuelle TEXT NOT NULL DEFAULT 'Aucune', -- CNSS | CNOPS | AMO | Privée | Aucune
+  numero_mutuelle TEXT,
+  groupe_sanguin TEXT,
+  allergies TEXT,
+  antecedents TEXT,
+  contact_urgence_nom TEXT,
+  contact_urgence_tel TEXT,
+  notes TEXT,
+  actif INTEGER NOT NULL DEFAULT 1,
+  created_ts TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_ts TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- ===== Actes médicaux & tarifs (en MAD) =====
+CREATE TABLE IF NOT EXISTS actes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  code TEXT,
+  libelle TEXT NOT NULL,
+  categorie TEXT NOT NULL DEFAULT 'Consultation', -- Consultation | Acte technique | Analyse | Autre
+  tarif REAL NOT NULL DEFAULT 0,
+  duree_minutes INTEGER NOT NULL DEFAULT 30,
+  actif INTEGER NOT NULL DEFAULT 1,
   created_ts TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
-CREATE TABLE IF NOT EXISTS ref_event_reason_translation (
+-- ===== Rendez-vous =====
+CREATE TABLE IF NOT EXISTS appointments (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  reason_id INTEGER NOT NULL REFERENCES ref_event_reason(id) ON DELETE CASCADE,
-  language TEXT NOT NULL,
-  description TEXT NOT NULL,
-  active TEXT NOT NULL DEFAULT 'Y'
-);
-
--- ===== M5 - REF_SOP_EVENT_MATRIX (versioned, Maker/Checker) =====
-CREATE TABLE IF NOT EXISTS ref_sop_event_matrix (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  sop TEXT NOT NULL,
-  effective_from TEXT NOT NULL,
-  version INTEGER NOT NULL,
-  is_current INTEGER NOT NULL DEFAULT 1,
-  status TEXT NOT NULL DEFAULT 'DRAFT', -- workflow status: DRAFT | SUBMITTED | AUTHORIZED
-  matrix_status TEXT NOT NULL DEFAULT 'Draft', -- business status shown on screen: Draft | Published
-  maker TEXT,
-  maker_ts TEXT,
-  checker TEXT,
-  checker_ts TEXT,
-  last_action TEXT NOT NULL DEFAULT 'New',
-  created_ts TEXT NOT NULL DEFAULT (datetime('now'))
-);
-
-CREATE TABLE IF NOT EXISTS sop_matrix_row (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  matrix_id INTEGER NOT NULL REFERENCES ref_sop_event_matrix(id) ON DELETE CASCADE,
-  event TEXT NOT NULL,
-  impact TEXT NOT NULL, -- BLOCK_ALL | BLOCK_DEBIT | ALERT | ALLOW
-  severity INTEGER NOT NULL,
-  message TEXT NOT NULL,
-  override TEXT NOT NULL DEFAULT 'N',
-  active TEXT NOT NULL DEFAULT 'Y'
-);
-
--- ===== M8 - MCL_RESTRICTION_CONTRIB (versioned, Maker/Checker) =====
-CREATE TABLE IF NOT EXISTS mcl_restriction_contrib (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  event_code TEXT NOT NULL,
-  effective_from TEXT NOT NULL,
-  version INTEGER NOT NULL,
-  is_current INTEGER NOT NULL DEFAULT 1,
-  status TEXT NOT NULL DEFAULT 'DRAFT',
-  contribution TEXT NOT NULL, -- NO_DEBIT_NO_CREDIT | NO_DEBIT | NO_CREDIT | NONE
-  event_active_status TEXT NOT NULL DEFAULT 'Active',
-  maker TEXT,
-  maker_ts TEXT,
-  checker TEXT,
-  checker_ts TEXT,
-  last_action TEXT NOT NULL DEFAULT 'New',
-  created_ts TEXT NOT NULL DEFAULT (datetime('now'))
-);
-
--- ===== EVT_COMPTE - active account events (consulted by M2/M7) =====
-CREATE TABLE IF NOT EXISTS evt_compte (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  account_no TEXT NOT NULL,
-  event_code TEXT NOT NULL,
-  pose_date TEXT NOT NULL,
-  case_dossier TEXT,
-  source TEXT NOT NULL,
-  active INTEGER NOT NULL DEFAULT 1
-);
-
--- ===== HIST_EVT_COMPTE - append-only history (M3) =====
-CREATE TABLE IF NOT EXISTS hist_evt_compte (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  account_no TEXT NOT NULL,
-  event_code TEXT NOT NULL,
-  pose_date TEXT NOT NULL,
-  levee_date TEXT,
+  patient_id INTEGER NOT NULL REFERENCES patients(id) ON DELETE CASCADE,
+  medecin_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  acte_id INTEGER REFERENCES actes(id) ON DELETE SET NULL,
+  date TEXT NOT NULL,     -- YYYY-MM-DD
+  heure TEXT NOT NULL,    -- HH:MM
+  duree_minutes INTEGER NOT NULL DEFAULT 30,
   motif TEXT,
-  source TEXT,
-  archive_ref TEXT
+  statut TEXT NOT NULL DEFAULT 'planifie', -- planifie | confirme | termine | annule | absent
+  notes TEXT,
+  rappel_envoye INTEGER NOT NULL DEFAULT 0,
+  created_ts TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_ts TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
--- ===== EVENT_REJECTION_LOG (M6) =====
-CREATE TABLE IF NOT EXISTS event_rejection_log (
+-- ===== Consultations (dossier médical) =====
+CREATE TABLE IF NOT EXISTS consultations (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  reject_id TEXT NOT NULL UNIQUE,
-  ts TEXT NOT NULL DEFAULT (datetime('now')),
-  source TEXT NOT NULL,
-  event_code TEXT NOT NULL,
-  code TEXT NOT NULL,
-  reject_type TEXT NOT NULL DEFAULT 'Functional', -- Functional | Technical
-  status TEXT NOT NULL DEFAULT 'Open', -- Open | Investigating | Retried | Closed
-  retry_count INTEGER NOT NULL DEFAULT 0,
-  correlation_id TEXT
+  patient_id INTEGER NOT NULL REFERENCES patients(id) ON DELETE CASCADE,
+  medecin_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  appointment_id INTEGER REFERENCES appointments(id) ON DELETE SET NULL,
+  date TEXT NOT NULL DEFAULT (date('now')),
+  motif TEXT,
+  poids_kg REAL,
+  taille_cm REAL,
+  tension TEXT,
+  temperature REAL,
+  examen_clinique TEXT,
+  diagnostic TEXT,
+  traitement TEXT,
+  ordonnance TEXT,
+  observations TEXT,
+  prochain_rdv TEXT,
+  created_ts TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
--- ===== FCUBS account restriction (native opposable value) =====
-CREATE TABLE IF NOT EXISTS fcubs_account_restriction (
-  account_no TEXT PRIMARY KEY,
-  native_restriction TEXT NOT NULL DEFAULT 'NONE',
-  last_commutation_ts TEXT
-);
-
--- ===== COMMUTATION_HISTORY / reconciliation (M9) =====
-CREATE TABLE IF NOT EXISTS commutation_history (
+-- ===== Facturation =====
+CREATE TABLE IF NOT EXISTS invoices (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  job_ref TEXT NOT NULL UNIQUE,
-  account_no TEXT NOT NULL,
-  theoretical TEXT NOT NULL,
-  fcubs_value TEXT NOT NULL,
-  mode TEXT NOT NULL DEFAULT 'RT', -- RT | Batch
-  status TEXT NOT NULL DEFAULT 'Mismatch', -- Mismatch | Corrected | Investigating
-  retry_count INTEGER NOT NULL DEFAULT 0,
-  ts TEXT NOT NULL DEFAULT (datetime('now')),
-  correlation_id TEXT
+  numero TEXT NOT NULL UNIQUE,
+  patient_id INTEGER NOT NULL REFERENCES patients(id) ON DELETE CASCADE,
+  consultation_id INTEGER REFERENCES consultations(id) ON DELETE SET NULL,
+  medecin_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  date TEXT NOT NULL DEFAULT (date('now')),
+  montant_total REAL NOT NULL DEFAULT 0,
+  montant_paye REAL NOT NULL DEFAULT 0,
+  mode_paiement TEXT NOT NULL DEFAULT 'especes', -- especes | carte | virement | mutuelle | cheque
+  statut TEXT NOT NULL DEFAULT 'en_attente', -- en_attente | payee | partielle | annulee
+  prise_en_charge_mutuelle INTEGER NOT NULL DEFAULT 0,
+  notes TEXT,
+  created_ts TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
+CREATE TABLE IF NOT EXISTS invoice_items (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  invoice_id INTEGER NOT NULL REFERENCES invoices(id) ON DELETE CASCADE,
+  acte_id INTEGER REFERENCES actes(id) ON DELETE SET NULL,
+  libelle TEXT NOT NULL,
+  quantite INTEGER NOT NULL DEFAULT 1,
+  prix_unitaire REAL NOT NULL DEFAULT 0
+);
+
+CREATE INDEX IF NOT EXISTS idx_appointments_date ON appointments(date);
+CREATE INDEX IF NOT EXISTS idx_appointments_patient ON appointments(patient_id);
+CREATE INDEX IF NOT EXISTS idx_consultations_patient ON consultations(patient_id);
+CREATE INDEX IF NOT EXISTS idx_invoices_patient ON invoices(patient_id);
+CREATE INDEX IF NOT EXISTS idx_patients_nom ON patients(nom, prenom);
 `);

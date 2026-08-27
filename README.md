@@ -1,38 +1,36 @@
-# SFD FCUBS — Référentiel des Événements Compte
+# Cabinet Médical — Application de gestion
 
-Application web full-stack conforme aux 9 mockups Oracle FLEXCUBE Enterprise
-Browser (M1 à M9) de la SFD `BOA-TPOSIG-MCB-REFCOMPTE-SFD-MOCKUPS-FCUBS-V1.0`.
+Application web full-stack pour la gestion d'un cabinet médical, adaptée au
+contexte marocain : montants en dirhams (DH), couverture CNSS / CNOPS / AMO,
+CIN, numéros de téléphone marocains, villes du Maroc.
 
 ## Structure
 
 - `server/` — API Express + TypeScript, persistance SQLite (better-sqlite3).
-  Implémente le modèle de persistance transversal (objets versionnés,
-  append-only, workflow Maker/Checker) et les règles de gestion RG-M1 à RG-M9.
-- `client/` — Application React + TypeScript (Vite) reproduisant la charte
-  Enterprise Browser (bandeau Oracle/FLEXCUBE, toolbar contextuelle, onglets
-  Main/Details/Audit, pied de page Record Status/Maker/Checker/Version).
+  Authentification par JWT, rôles (`admin`, `medecin`, `secretaire`).
+- `client/` — Application React + TypeScript (Vite), routage avec
+  `react-router-dom`.
 
-## Écrans couverts
+## Fonctionnalités
 
-| Écran | Function ID | Pattern | Titre |
-|---|---|---|---|
-| M1 | MCDCEVNT | Maintenance | Code Event Maintenance |
-| M2 | MCSAEVTS | Consultation | Active Account Events |
-| M3 | MCDAEVTH | Consultation | Account Event History |
-| M4 | MCDCEVRS | Maintenance | Event Reason Maintenance |
-| M5 | MCDESOP | Maintenance | Event / SOP Impact Matrix |
-| M6 | MCSEVREJ | Exploitation | Event Interface Rejection Monitor |
-| M7 | MCSAEVST | Consultation | Account Events & Global Restriction |
-| M8 | MCDMCLMX | Maintenance | MCL Restriction Contribution |
-| M9 | MCSMCLMN | Exploitation | MCL Commutation Monitor |
-
-## Sécurité / profils (démo)
-
-Un sélecteur de profil dans l'en-tête simule les rôles décrits dans la SFD :
-`FCUBS_PARAM_MAKER`, `FCUBS_PARAM_CHECKER`, `FCUBS_VIEWER`, `FCUBS_OPS_N2`,
-`FCUBS_OPS_SENIOR`, `FCUBS_AUDITOR`. Chaque profil n'affiche que les fonctions
-autorisées et active/désactive la toolbar contextuelle en conséquence
-(New/Query/Unlock/Save/Delete/Submit/Authorize/Copy/Print/Close).
+- **Authentification** avec rôles (administrateur, médecin, secrétaire).
+- **Patients** : fiche complète (CIN, date de naissance, coordonnées, ville,
+  mutuelle CNSS/CNOPS/AMO/Privée, groupe sanguin, allergies, antécédents,
+  contact d'urgence), recherche, dossier patient avec historique.
+- **Rendez-vous** : agenda journalier, création/modification, statuts
+  (planifié, confirmé, terminé, annulé, absent), association médecin/acte.
+- **Consultations** : dossier médical (motif, constantes — poids, taille,
+  tension, température —, examen clinique, diagnostic, traitement,
+  ordonnance imprimable, observations, prochain rendez-vous).
+- **Facturation** : factures multi-lignes basées sur les actes et tarifs du
+  cabinet, montants en DH, modes de paiement (espèces, carte, virement,
+  mutuelle, chèque), suivi des paiements partiels/en attente.
+- **Actes & tarifs** : catalogue des actes médicaux et de leurs tarifs (DH).
+- **Utilisateurs** (réservé à l'administrateur) : gestion du personnel du
+  cabinet (médecins avec spécialité, secrétaires).
+- **Tableau de bord** : rendez-vous du jour, patients actifs, consultations
+  du mois, revenus du mois, factures en attente, répartition des patients
+  par couverture médicale.
 
 ## Démarrage
 
@@ -50,6 +48,14 @@ npm run dev
 
 Puis ouvrir http://localhost:5173.
 
+### Comptes de démonstration
+
+| Rôle | Email | Mot de passe |
+|---|---|---|
+| Administrateur (médecin) | admin@cabinet.ma | admin123 |
+| Médecin (pédiatre) | k.bennani@cabinet.ma | medecin123 |
+| Secrétaire | secretariat@cabinet.ma | secretaire123 |
+
 ## Déploiement (Docker)
 
 L'application est packagée en une seule image Docker autonome : le serveur
@@ -63,8 +69,8 @@ redémarrages/mises à jour du conteneur.
 docker compose up --build -d
 
 # Ou manuellement :
-docker build -t sfd-fcubs-app .
-docker run -d -p 4000:4000 -v sfd-data:/app/data --name sfd-fcubs sfd-fcubs-app
+docker build -t cabinet-medical-app .
+docker run -d -p 4000:4000 -v cabinet-data:/app/data --name cabinet-medical cabinet-medical-app
 ```
 
 Puis ouvrir http://localhost:4000 (l'API et le front sont servis sur le même
@@ -76,23 +82,26 @@ Variables d'environnement :
 |---|---|---|
 | `PORT` | `4000` | Port d'écoute HTTP |
 | `DB_PATH` | `/app/data/data.sqlite` | Chemin du fichier SQLite |
+| `JWT_SECRET` | (à définir) | Clé de signature des jetons JWT — **à changer en production** |
 
 Pour déployer sur une plateforme PaaS (Render, Railway, Fly.io, etc.), pointer
 simplement la plateforme sur ce `Dockerfile` à la racine du repo — c'est un
 build Docker standard sans dépendance particulière à l'infrastructure locale.
+Pensez à définir `JWT_SECRET` avec une valeur secrète et aléatoire.
 
 > Note : la construction de l'image nécessite de pouvoir tirer l'image de
 > base `node:20-bookworm-slim` depuis Docker Hub. Si votre réseau restreint
 > les registres de conteneurs (proxy d'entreprise, environnement bac à sable),
 > lancez le build depuis un poste/CI qui a accès à Docker Hub.
 
-## Modèle de persistance
+## Modèle de données
 
-Chaque table de paramétrage (`ref_event_code`, `ref_event_reason`,
-`ref_sop_event_matrix`, `mcl_restriction_contrib`) est versionnée
-(`version`, `is_current`, `status` DRAFT/SUBMITTED/AUTHORIZED) : Unlock crée
-une nouvelle version brouillon à partir de la version autorisée courante,
-Authorize l'active et exige un Checker distinct du Maker (contrôle 4 yeux),
-Delete ne s'applique qu'aux brouillons jamais autorisés. Les tables
-`hist_evt_compte`, `event_rejection_log` et `commutation_history` sont
-append-only et alimentent respectivement M3, M6 et M9.
+- `users` — personnel du cabinet (admin/médecin/secrétaire), mot de passe
+  hashé (bcrypt).
+- `patients` — dossier administratif et médical de base.
+- `actes` — catalogue des actes médicaux et tarifs (DH).
+- `appointments` — rendez-vous liés à un patient, un médecin et un acte.
+- `consultations` — dossier médical détaillé d'une visite (constantes,
+  diagnostic, ordonnance).
+- `invoices` / `invoice_items` — facturation multi-lignes avec suivi des
+  paiements.
