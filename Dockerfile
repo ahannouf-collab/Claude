@@ -19,7 +19,8 @@ RUN npm prune --omit=dev
 FROM node:20-bookworm-slim
 ENV NODE_ENV=production \
     PORT=4000 \
-    DB_PATH=/app/data/data.sqlite
+    DB_PATH=/app/data/data.sqlite \
+    JWT_SECRET=change-me-in-production
 WORKDIR /app/server
 COPY --from=server-build /app/server/node_modules ./node_modules
 COPY --from=server-build /app/server/package.json ./package.json
