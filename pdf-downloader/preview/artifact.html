@@ -1,0 +1,347 @@
+<title>Téléchargeur PDF</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700&family=Source+Sans+3:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root{
+    --bg:#eef2f0;
+    --surface:#ffffff;
+    --surface-2:#e4e9e6;
+    --ink:#17211d;
+    --muted:#56655e;
+    --border:#cfd8d3;
+    --accent:#1f7a63;
+    --accent-ink:#ffffff;
+    --danger:#b3261e;
+    --danger-bg:#fbeceb;
+    --success-bg:#e8f5f0;
+    --focus:#1f7a63;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#101513;
+      --surface:#171f1c;
+      --surface-2:#1e2724;
+      --ink:#e6ece8;
+      --muted:#93a49c;
+      --border:#2a3532;
+      --accent:#45c9a6;
+      --accent-ink:#0b1a15;
+      --danger:#ff8a7c;
+      --danger-bg:#2a1613;
+      --success-bg:#16261f;
+      --focus:#45c9a6;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#101513;
+    --surface:#171f1c;
+    --surface-2:#1e2724;
+    --ink:#e6ece8;
+    --muted:#93a49c;
+    --border:#2a3532;
+    --accent:#45c9a6;
+    --accent-ink:#0b1a15;
+    --danger:#ff8a7c;
+    --danger-bg:#2a1613;
+    --success-bg:#16261f;
+    --focus:#45c9a6;
+  }
+
+  *{ box-sizing:border-box; }
+  body{
+    margin:0;
+    min-height:100vh;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:"Source Sans 3", system-ui, sans-serif;
+    display:flex;
+    align-items:flex-start;
+    justify-content:center;
+    padding:48px 20px 80px;
+  }
+
+  .frame{ width:100%; max-width:460px; display:flex; flex-direction:column; gap:14px; }
+
+  .card{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:28px;
+    box-shadow:0 1px 2px rgba(0,0,0,.04);
+  }
+
+  header{ display:flex; align-items:flex-start; gap:12px; margin-bottom:6px; }
+  .mark{
+    flex:0 0 auto;
+    width:38px; height:38px;
+    border-radius:9px;
+    background:var(--accent);
+    color:var(--accent-ink);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .mark svg{ width:20px; height:20px; }
+  header h1{
+    font-family:"Archivo", system-ui, sans-serif;
+    font-weight:700;
+    font-size:1.28rem;
+    margin:0;
+    text-wrap:balance;
+  }
+  .tag{
+    margin:2px 0 0;
+    font-family:"IBM Plex Mono", monospace;
+    font-size:.72rem;
+    letter-spacing:.04em;
+    color:var(--muted);
+    text-transform:uppercase;
+  }
+  .badge{
+    margin-left:auto;
+    flex:0 0 auto;
+    font-family:"IBM Plex Mono", monospace;
+    font-size:.66rem;
+    letter-spacing:.05em;
+    text-transform:uppercase;
+    padding:4px 8px;
+    border-radius:999px;
+    background:var(--surface-2);
+    color:var(--muted);
+    border:1px solid var(--border);
+    white-space:nowrap;
+  }
+
+  .lede{
+    font-size:.9rem;
+    line-height:1.5;
+    color:var(--muted);
+    margin:0 0 20px;
+    max-width:60ch;
+  }
+
+  form{ display:flex; flex-direction:column; gap:10px; }
+  label{ font-size:.78rem; font-weight:600; }
+  input[type="url"]{
+    width:100%;
+    padding:11px 12px;
+    border-radius:8px;
+    border:1px solid var(--border);
+    background:var(--bg);
+    color:var(--ink);
+    font-family:"IBM Plex Mono", monospace;
+    font-size:.85rem;
+  }
+  input[type="url"]:focus-visible{
+    outline:2px solid var(--focus);
+    outline-offset:1px;
+  }
+  input[type="url"]::placeholder{ color:var(--muted); opacity:.8; }
+
+  button{
+    font-family:inherit;
+    cursor:pointer;
+  }
+  .run{
+    margin-top:4px;
+    padding:12px;
+    border:none;
+    border-radius:8px;
+    background:var(--accent);
+    color:var(--accent-ink);
+    font-weight:600;
+    font-size:.92rem;
+  }
+  .run:disabled{ opacity:.6; cursor:not-allowed; }
+  .run:focus-visible{ outline:2px solid var(--focus); outline-offset:2px; }
+
+  .examples{ display:flex; gap:8px; margin-top:4px; flex-wrap:wrap; }
+  .chip{
+    border:1px solid var(--border);
+    background:transparent;
+    color:var(--muted);
+    padding:6px 10px;
+    border-radius:999px;
+    font-size:.74rem;
+  }
+  .chip:hover{ border-color:var(--accent); color:var(--ink); }
+  .chip:focus-visible{ outline:2px solid var(--focus); outline-offset:2px; }
+
+  .console{
+    margin-top:18px;
+    background:var(--surface-2);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:14px 16px;
+    font-family:"IBM Plex Mono", monospace;
+    font-size:.78rem;
+    line-height:1.7;
+    min-height:64px;
+  }
+  .console .empty{ color:var(--muted); }
+  .console .line{ color:var(--muted); }
+  .console .line.ok{ color:var(--accent); }
+  .console .line.err{ color:var(--danger); }
+  .console .result{
+    margin-top:8px;
+    padding-top:8px;
+    border-top:1px dashed var(--border);
+  }
+  .result.success{ color:var(--accent); }
+  .result.error{ color:var(--danger); }
+  .file-chip{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    margin-top:6px;
+    padding:6px 10px;
+    border-radius:8px;
+    background:var(--success-bg);
+    color:var(--ink);
+    font-size:.76rem;
+    cursor:not-allowed;
+  }
+
+  .footnote{
+    text-align:center;
+    font-size:.76rem;
+    color:var(--muted);
+    line-height:1.6;
+    margin:0;
+    padding:0 8px;
+  }
+  .footnote code{
+    font-family:"IBM Plex Mono", monospace;
+    background:var(--surface-2);
+    padding:1px 5px;
+    border-radius:4px;
+    border:1px solid var(--border);
+  }
+
+  @media (prefers-reduced-motion: no-preference){
+    .console .line{ animation:reveal .25s ease-out both; }
+  }
+  @keyframes reveal{ from{ opacity:0; transform:translateY(2px);} to{ opacity:1; transform:none;} }
+</style>
+
+<div class="frame">
+  <div class="card">
+    <header>
+      <div class="mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <path d="M14 2v6h6"/>
+          <path d="M12 11v6"/>
+          <path d="M9.5 14.5 12 17l2.5-2.5"/>
+        </svg>
+      </div>
+      <div>
+        <h1>Téléchargeur PDF</h1>
+        <p class="tag">Scribd · Calameo</p>
+      </div>
+      <span class="badge">Aperçu — démo</span>
+    </header>
+
+    <p class="lede">
+      Colle le lien d'un document. En conditions réelles, le serveur cherche le bouton
+      « Télécharger » officiel de la page — s'il n'existe pas, rien n'est récupéré.
+      Ici, aucune requête réseau n'est faite : les deux exemples ci-dessous rejouent
+      les deux issues possibles.
+    </p>
+
+    <form id="f">
+      <label for="url">Lien du document</label>
+      <input type="url" id="url" placeholder="https://www.scribd.com/document/…" autocomplete="off" />
+      <div class="examples">
+        <button type="button" class="chip" data-demo="ok">Exemple : bouton disponible</button>
+        <button type="button" class="chip" data-demo="blocked">Exemple : bouton absent</button>
+      </div>
+      <button type="submit" class="run" id="runBtn">Récupérer le PDF</button>
+    </form>
+
+    <div class="console" id="console" aria-live="polite">
+      <div class="empty">En attente d'une requête…</div>
+    </div>
+  </div>
+
+  <p class="footnote">
+    Aperçu d'interface uniquement — aucun serveur n'est connecté ici.
+    Pour un téléchargement réel : <code>cd pdf-downloader &amp;&amp; npm install &amp;&amp; npm start</code>
+  </p>
+</div>
+
+<script>
+  const form = document.getElementById('f');
+  const urlInput = document.getElementById('url');
+  const runBtn = document.getElementById('runBtn');
+  const consoleEl = document.getElementById('console');
+  let seq = 0;
+
+  function wait(ms){ return new Promise(r => setTimeout(r, ms)); }
+
+  function addLine(text, cls){
+    const div = document.createElement('div');
+    div.className = 'line' + (cls ? ' ' + cls : '');
+    div.textContent = text;
+    consoleEl.appendChild(div);
+    return div;
+  }
+
+  async function run(mode){
+    seq += 1;
+    const myRun = seq;
+    runBtn.disabled = true;
+    consoleEl.innerHTML = '';
+
+    addLine('> Ouverture de la page…');
+    await wait(500);
+    if (myRun !== seq) return;
+
+    addLine('> Recherche du bouton « Télécharger »…');
+    await wait(700);
+    if (myRun !== seq) return;
+
+    const result = document.createElement('div');
+
+    if (mode === 'ok') {
+      addLine('> Bouton trouvé, récupération du fichier…', 'ok');
+      await wait(600);
+      if (myRun !== seq) return;
+      result.className = 'result success';
+      result.innerHTML =
+        'PDF prêt.<br/><span class="file-chip" title="Démo — aucun fichier réel">rapport-annuel.pdf ↓</span>';
+    } else if (mode === 'blocked') {
+      addLine('> Aucun contrôle de téléchargement visible.', 'err');
+      await wait(400);
+      if (myRun !== seq) return;
+      result.className = 'result error';
+      result.textContent =
+        "Le propriétaire de ce document n'a pas autorisé le téléchargement public.";
+    } else {
+      addLine('> Mode aperçu : aucune page réelle n\'est consultée.', 'err');
+      await wait(400);
+      if (myRun !== seq) return;
+      result.className = 'result error';
+      result.textContent =
+        "Utilise l'un des deux exemples ci-dessus pour voir les deux issues possibles.";
+    }
+
+    consoleEl.appendChild(result);
+    runBtn.disabled = false;
+  }
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const v = urlInput.value.toLowerCase();
+    if (v.includes('blocked')) run('blocked');
+    else if (v.includes('scribd.com') || v.includes('calameo.com')) run('ok');
+    else run('unknown');
+  });
+
+  document.querySelectorAll('[data-demo]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const demo = btn.dataset.demo;
+      urlInput.value = demo === 'ok'
+        ? 'https://www.scribd.com/document/000000/exemple-autorise'
+        : 'https://www.calameo.com/read/000000blocked';
+      run(demo);
+    });
+  });
+</script>
