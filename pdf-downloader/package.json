@@ -1,0 +1,16 @@
+{
+  "name": "scribd-calameo-pdf-downloader",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Télécharge en PDF les documents Scribd/Calameo dont le propriétaire a activé le téléchargement public.",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "postinstall": "playwright install --with-deps chromium"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "playwright": "^1.47.0"
+  }
+}
