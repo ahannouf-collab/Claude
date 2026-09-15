@@ -1,5 +1,8 @@
 # SFD FCUBS — Référentiel des Événements Compte
 
+> Ce dépôt contient également un projet indépendant : **`game/`**, un jeu de
+> football arcade (PWA installable sur iPhone). Voir [`game/README.md`](game/README.md).
+
 Application web full-stack conforme aux 9 mockups Oracle FLEXCUBE Enterprise
 Browser (M1 à M9) de la SFD `BOA-TPOSIG-MCB-REFCOMPTE-SFD-MOCKUPS-FCUBS-V1.0`.
 

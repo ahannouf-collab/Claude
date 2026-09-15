@@ -1,0 +1,193 @@
+:root {
+  color-scheme: dark;
+  --bg: #071a2b;
+  --bg-elevated: #0f2740;
+  --card: #123252;
+  --card-hover: #17406a;
+  --text: #eaf2fb;
+  --text-dim: #9db2c9;
+  --accent: #22d3ee;
+  --accent-strong: #06b6d4;
+  --good: #34d399;
+  --warn: #fbbf24;
+  --bad: #f87171;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+body { background: var(--bg); color: var(--text); }
+
+#app { display: flex; flex-direction: column; }
+
+.screen {
+  position: absolute;
+  inset: 0;
+  padding-top: calc(var(--safe-top) + 8px);
+  padding-bottom: calc(var(--safe-bottom) + 8px);
+  padding-left: calc(var(--safe-left) + 12px);
+  padding-right: calc(var(--safe-right) + 12px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 6px 4px 10px;
+  flex-shrink: 0;
+}
+
+.club-badge {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  flex-shrink: 0;
+  border: 2px solid rgba(255,255,255,0.25);
+}
+
+.club-title { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.club-title h1 { font-size: 16px; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 42vw; }
+
+.currency {
+  display: flex; align-items: center; gap: 6px;
+  background: var(--card);
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-weight: 600;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.content { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding-bottom: 8px; }
+
+.card {
+  background: var(--card);
+  border-radius: 14px;
+  padding: 14px;
+  margin-bottom: 10px;
+}
+
+.card h2 { margin: 0 0 8px; font-size: 15px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.04em; }
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--accent-strong);
+  color: #04202a;
+  font-weight: 700;
+  border: none;
+  border-radius: 12px;
+  padding: 14px 18px;
+  font-size: 15px;
+  min-height: 46px;
+  cursor: pointer;
+  width: 100%;
+  touch-action: manipulation;
+}
+.btn:active { transform: scale(0.98); }
+.btn.secondary { background: var(--card-hover); color: var(--text); }
+.btn.ghost { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
+.btn.danger { background: var(--bad); color: #2a0505; }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.row { display: flex; gap: 8px; }
+.row.wrap { flex-wrap: wrap; }
+.grow { flex: 1; }
+
+.player-row {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--bg-elevated);
+  border-radius: 10px;
+  padding: 8px 10px;
+  margin-bottom: 6px;
+}
+.player-row.starter { border: 1px solid var(--accent); }
+.pos-chip {
+  width: 30px; height: 22px; border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; flex-shrink: 0;
+  background: rgba(255,255,255,0.1);
+}
+.player-info { flex: 1; min-width: 0; }
+.player-name { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.player-meta { font-size: 11px; color: var(--text-dim); }
+.ovr-badge {
+  width: 34px; height: 34px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: 13px; flex-shrink: 0;
+}
+.rarity-Bronze { background: #8a5a35; color: #fff; }
+.rarity-Argent { background: #9aa5b1; color: #08111a; }
+.rarity-Or { background: #e8b923; color: #251c00; }
+.rarity-Élite { background: #7c3aed; color: #fff; }
+.rarity-Légende { background: linear-gradient(135deg,#f59e0b,#ef4444); color: #fff; }
+
+.tag { font-size: 11px; padding: 2px 8px; border-radius: 999px; background: rgba(255,255,255,0.08); color: var(--text-dim); }
+
+table.league { width: 100%; border-collapse: collapse; font-size: 12px; }
+table.league th, table.league td { padding: 5px 4px; text-align: center; }
+table.league th { color: var(--text-dim); font-weight: 600; }
+table.league td:first-child, table.league th:first-child { text-align: left; }
+table.league tr.me { background: rgba(34,211,238,0.14); border-radius: 8px; font-weight: 700; }
+
+.bottomnav {
+  display: flex;
+  flex-shrink: 0;
+  background: var(--bg-elevated);
+  border-radius: 16px;
+  padding: 6px;
+  gap: 4px;
+  margin-top: 8px;
+}
+.navbtn {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 11px;
+  padding: 8px 2px;
+  border-radius: 12px;
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+}
+.navbtn.active { background: var(--card-hover); color: var(--text); }
+.navbtn .icon { font-size: 18px; }
+
+.field-select { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+.color-swatch {
+  width: 36px; height: 36px; border-radius: 8px; border: 2px solid transparent;
+}
+.color-swatch.selected { border-color: #fff; }
+
+input[type="text"] {
+  width: 100%;
+  background: var(--bg-elevated);
+  border: 1px solid rgba(255,255,255,0.15);
+  color: var(--text);
+  border-radius: 10px;
+  padding: 12px;
+  font-size: 15px;
+}
+
+.center-modal {
+  position: absolute; inset: 0; background: rgba(2,10,20,0.86);
+  display: flex; align-items: center; justify-content: center; z-index: 50;
+  padding: 20px;
+}
+.modal-card {
+  background: var(--card); border-radius: 18px; padding: 20px; max-width: 420px; width: 100%;
+  max-height: 90vh; overflow-y: auto;
+}
+
+.log-line { font-size: 12px; color: var(--text-dim); padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.06); }
+
+#gameHost { position: absolute; inset: 0; background: #063; }
+
+.result-banner { font-size: 34px; font-weight: 800; text-align: center; margin: 10px 0; }
+.score-line { font-size: 48px; font-weight: 900; text-align: center; }
